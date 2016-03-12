@@ -42,6 +42,8 @@ TESTS += tests/tests/bootloader_test \
          tests/tests/responder_test \
          tests/tests/spirgb_test \
          tests/tests/stream_decoder_test \
+         tests/tests/simulated_transceiver_test \
+         tests/tests/spi_test \
          tests/tests/transceiver_test \
          tests/tests/usb_transport_test \
          tests/tests/utils_test
@@ -84,11 +86,11 @@ tests_tests_dimmer_model_test_LDADD = $(TESTING_LIBS) $(OLA_LIBS) \
                                       firmware/src/libdimmermodel.la \
                                       firmware/src/librdmresponder.la \
                                       firmware/src/libreceivercounters.la \
-                                      firmware/src/libcoarsetimer.la \
                                       firmware/src/librdmbuffer.la \
                                       firmware/src/librdmutil.la \
-                                      tests/tests/libmodeltest.la \
                                       tests/harmony/mocks/libharmonymock.la \
+                                      tests/mocks/libcoarsetimermock.la \
+                                      tests/tests/libmodeltest.la \
                                       tests/mocks/libmatchers.la
 
 tests_tests_flags_test_SOURCES = tests/tests/FlagsTest.cpp
@@ -122,7 +124,8 @@ tests_tests_message_handler_test_LDADD = $(GMOCK_LIBS) $(GTEST_LIBS) \
                                          tests/mocks/librdmhandlermock.la \
                                          tests/mocks/libsyslogmock.la \
                                          tests/mocks/libtransceivermock.la \
-                                         tests/mocks/libtransportmock.la
+                                         tests/mocks/libtransportmock.la \
+                                         tests/harmony/mocks/libharmonymock.la
 
 tests_tests_network_model_test_SOURCES = tests/tests/NetworkModelTest.cpp
 tests_tests_network_model_test_CXXFLAGS = $(TESTING_CXXFLAGS) $(OLA_CFLAGS)
@@ -218,6 +221,15 @@ tests_tests_usb_transport_test_LDADD = $(TESTING_LIBS) \
                                        tests/mocks/libstreamdecodermock.la \
                                        firmware/src/libflags.la
 
+tests_tests_spi_test_SOURCES = tests/tests/SPITest.cpp
+tests_tests_spi_test_CXXFLAGS = $(TESTING_CXXFLAGS) $(OLA_CFLAGS)
+tests_tests_spi_test_LDADD = \
+    $(GMOCK_LIBS) $(GTEST_LIBS) $(OLA_LIBS) \
+    tests/sim/libsim.la \
+    firmware/src/libspi.la \
+    tests/mocks/libmatchers.la \
+    tests/harmony/mocks/libharmonymock.la
+
 tests_tests_transceiver_test_SOURCES = tests/tests/TransceiverTest.cpp
 tests_tests_transceiver_test_CXXFLAGS = $(TESTING_CXXFLAGS)
 tests_tests_transceiver_test_LDADD = $(GMOCK_LIBS) $(GTEST_LIBS) \
@@ -225,6 +237,18 @@ tests_tests_transceiver_test_LDADD = $(GMOCK_LIBS) $(GTEST_LIBS) \
                                      tests/harmony/mocks/libharmonymock.la \
                                      tests/mocks/libcoarsetimermock.la \
                                      tests/mocks/libsyslogmock.la
+
+tests_tests_simulated_transceiver_test_SOURCES = \
+    tests/tests/SimulatedTransceiverTest.cpp
+tests_tests_simulated_transceiver_test_CXXFLAGS = \
+    $(TESTING_CXXFLAGS) $(OLA_CFLAGS)
+tests_tests_simulated_transceiver_test_LDADD = \
+    $(GMOCK_LIBS) $(GTEST_LIBS) $(OLA_LIBS) \
+    tests/sim/libsim.la \
+    firmware/src/libtransceiver.la \
+    firmware/src/libcoarsetimer.la \
+    tests/harmony/mocks/libharmonymock.la \
+    tests/mocks/libsyslogmock.la
 
 tests_tests_utils_test_SOURCES = tests/tests/UtilsTest.cpp
 tests_tests_utils_test_CXXFLAGS = $(TESTING_CXXFLAGS)

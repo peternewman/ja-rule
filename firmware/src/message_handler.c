@@ -21,15 +21,19 @@
 
 #include <stdlib.h>
 
+#include "system_definitions.h"
+
 #include "app.h"
 #include "app_pipeline.h"
 #include "constants.h"
 #include "flags.h"
+#include "peripheral/eth/plib_eth.h"
 #include "rdm_frame.h"
 #include "rdm_handler.h"
 #include "syslog.h"
-#include "system_definitions.h"
 #include "transceiver.h"
+
+#include "app_settings.h"
 
 #ifndef PIPELINE_TRANSPORT_TX
 static TransportTXFunction g_message_tx_cb;
@@ -59,26 +63,52 @@ static void SetMode(uint8_t token,
                     const uint8_t* payload,
                     unsigned int length) {
   uint8_t mode;
-  if (length != sizeof(mode)) {
+  if (length != sizeof(mode) || payload[0] >= T_MODE_LAST) {
     SendMessage(token, COMMAND_SET_MODE, RC_BAD_PARAM, NULL, 0u);
     return;
   }
-  mode = payload[0];
-  Transceiver_SetMode(mode ? T_MODE_RESPONDER : T_MODE_CONTROLLER);
-  SendMessage(token, COMMAND_SET_MODE, RC_OK, NULL, 0u);
-}
-
-static void GetUID(uint8_t token, unsigned int length) {
-  if (length) {
-    SendMessage(token, COMMAND_GET_UID, RC_BAD_PARAM, NULL, 0u);
+  if (!Transceiver_SetMode(payload[0], token)) {
+    SendMessage(token, COMMAND_SET_MODE, RC_INVALID_MODE, NULL, 0u);
     return;
   }
-  uint8_t uid[UID_LENGTH];
-  RDMHandler_GetUID(uid);
+}
+
+static void GetHardwareInfo(uint8_t token, unsigned int length) {
+  if (length) {
+    SendMessage(token, COMMAND_GET_HARDWARE_INFO, RC_BAD_PARAM, NULL, 0u);
+    return;
+  }
+
+  typedef struct {
+    uint16_t model;
+    uint8_t uid[UID_LENGTH];
+    uint8_t mac[MAC_ADDRESS_SIZE];
+  } __attribute__((packed)) HardwareResponse;
+
+  HardwareResponse response;
+  response.model = HARDWARE_MODEL;
+  RDMHandler_GetUID(response.uid);
+
+  unsigned int i = 0;
+  for (; i < MAC_ADDRESS_SIZE; i++) {
+    response.mac[i] = PLIB_ETH_StationAddressGet(ETH_ID_0, i + 1);
+  }
+
   IOVec iovec;
-  iovec.base = (uint8_t*) uid;
-  iovec.length = UID_LENGTH;
-  SendMessage(token, COMMAND_GET_UID, RC_OK, &iovec, 1u);
+  iovec.base = &response;
+  iovec.length = sizeof(HardwareResponse);
+  SendMessage(token, COMMAND_GET_HARDWARE_INFO, RC_OK, &iovec, 1u);
+}
+
+static void RunSelfTest(uint8_t token, unsigned int length) {
+  if (length) {
+    SendMessage(token, COMMAND_RUN_SELF_TEST, RC_BAD_PARAM, NULL, 0u);
+    return;
+  }
+
+  if (!Transceiver_QueueSelfTest(token)) {
+    SendMessage(token, COMMAND_RUN_SELF_TEST, RC_TEST_FAILED, NULL, 0u);
+  }
 }
 
 static void SetBreakTime(uint8_t token,
@@ -322,8 +352,11 @@ void MessageHandler_HandleMessage(const Message *message) {
     case COMMAND_SET_MODE:
       SetMode(message->token, message->payload, message->length);
       break;
-    case COMMAND_GET_UID:
-      GetUID(message->token, message->length);
+    case COMMAND_GET_HARDWARE_INFO:
+      GetHardwareInfo(message->token, message->length);
+      break;
+    case COMMAND_RUN_SELF_TEST:
+      RunSelfTest(message->token, message->length);
       break;
     case COMMAND_RDM_DUB_REQUEST:
       if (CheckForTXMode(message) &&
@@ -403,7 +436,7 @@ void MessageHandler_TransceiverEvent(const TransceiverEvent *event) {
   Command command;
   ReturnCode rc;
   switch (event->result) {
-    case T_RESULT_TX_OK:
+    case T_RESULT_OK:
       rc = RC_OK;
       break;
     case T_RESULT_TX_ERROR:
@@ -417,6 +450,12 @@ void MessageHandler_TransceiverEvent(const TransceiverEvent *event) {
       break;
     case T_RESULT_RX_INVALID:
       rc = RC_RDM_INVALID_RESPONSE;
+      break;
+    case T_RESULT_CANCELLED:
+      rc = RC_CANCELLED;
+      break;
+    case T_RESULT_SELF_TEST_FAILED:
+      rc = RC_TEST_FAILED;
       break;
     default:
       rc = RC_UNKNOWN;
@@ -441,8 +480,14 @@ void MessageHandler_TransceiverEvent(const TransceiverEvent *event) {
     case T_OP_RDM_BROADCAST:
       command = COMMAND_RDM_BROADCAST_REQUEST;
       break;
+    case T_OP_SELF_TEST:
+      command = COMMAND_RUN_SELF_TEST;
+      break;
+    case T_OP_MODE_CHANGE:
+      command = COMMAND_SET_MODE;
+      break;
     default:
-      SysLog_Print(SYSLOG_INFO, "Unknown Transceiver event %d", event->op);
+      SysLog_Print(SYSLOG_INFO, "Unknown Transceiver op %d", event->op);
       return;
   }
 

@@ -38,6 +38,7 @@
 #include "stream_decoder.h"
 #include "syslog.h"
 #include "system_definitions.h"
+#include "temperature.h"
 #include "transceiver.h"
 #include "uid_store.h"
 #include "usb_descriptors.h"
@@ -46,7 +47,7 @@
 
 #include "app_settings.h"
 
-void __ISR(AS_TIMER_ISR_VECTOR(COARSE_TIMER_ID), ipl6) TimerEvent() {
+void __ISR(AS_TIMER_ISR_VECTOR(COARSE_TIMER_ID), ipl6AUTO) TimerEvent() {
   CoarseTimer_TimerEvent();
 }
 
@@ -72,6 +73,8 @@ void APP_Initialize(void) {
   USBTransport_Initialize(NULL);
   USBConsole_Initialize();
   SysLog_Initialize(NULL);
+
+  Temperature_Init();
 
   // Initialize the DMX / RDM Transceiver
   TransceiverHardwareSettings transceiver_settings = {
@@ -153,11 +156,12 @@ void APP_Tasks(void) {
   USBTransport_Tasks();
   Transceiver_Tasks();
   USBConsole_Tasks();
-  RDMResponder_Tasks();
 
   if (Transceiver_GetMode() == T_MODE_RESPONDER) {
+    RDMResponder_Tasks();
     RDMHandler_Tasks();
     SPIRGB_Tasks();
+    Temperature_Tasks();
   }
 }
 

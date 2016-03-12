@@ -1060,7 +1060,7 @@ void DimmerModel_Initialize() {
 
     RDMResponder_SwitchResponder(&subdevice->responder);
     memcpy(g_responder->uid, parent_uid, UID_LENGTH);
-    RDMResponder_ResetToFactoryDefaults();
+    RDMResponder_InitResponder();
     g_responder->is_subdevice = true;
     g_responder->sub_device_count = NUMBER_OF_SUB_DEVICES;
   }
@@ -1081,7 +1081,7 @@ void DimmerModel_Initialize() {
 
 static void DimmerModel_Activate() {
   g_responder->def = &ROOT_RESPONDER_DEFINITION;
-  RDMResponder_ResetToFactoryDefaults();
+  RDMResponder_InitResponder();
   g_responder->sub_device_count = NUMBER_OF_SUB_DEVICES;
   g_root_device.status_message_timer = CoarseTimer_GetTime();
 }
@@ -1167,7 +1167,7 @@ static void DimmerModel_Tasks() {
   if (g_root_device.running_self_test &&
       CoarseTimer_HasElapsed(
           g_root_device.self_test_timer,
-          SELF_TESTS[g_root_device.running_self_test].duration)) {
+          SELF_TESTS[g_root_device.running_self_test - 1].duration)) {
     // Queue a status message for the root.
     QueueStatusMessage(
         &g_root_device.status_message, SUBDEVICE_ROOT, STATUS_ADVISORY,
@@ -1315,7 +1315,7 @@ static const PIDDescriptor SUBDEVICE_PID_DESCRIPTORS[] = {
   {PID_CLEAR_STATUS_ID, (PIDCommandHandler) NULL, 0u,
     DimmerModel_ClearStatusId},
   {PID_SUB_DEVICE_STATUS_REPORT_THRESHOLD,
-    DimmerModel_GetSubDeviceReportingThreshold, 1u,
+    DimmerModel_GetSubDeviceReportingThreshold, 0u,
     DimmerModel_SetSubDeviceReportingThreshold},
   {PID_SUPPORTED_PARAMETERS, RDMResponder_GetSupportedParameters, 0u,
     (PIDCommandHandler) NULL},

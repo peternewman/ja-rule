@@ -38,7 +38,7 @@ if [[ $TASK = 'lint' ]]; then
     Bootloader/firmware/src/*.h \
     $(find common boardcfg tools -name "*.h" -type f) \
     firmware/src/*.h \
-    tests/{include,lib,tests,system_config}/*.{h,cpp}
+    tests/{include,lib,sim,system_config,tests}/*.{h,cpp}
   if [[ $? -ne 0 ]]; then
     exit 1;
   fi;
@@ -63,6 +63,23 @@ elif [[ $TASK = 'doxygen' ]]; then
     exit 1;
   else
     echo "Found $warnings doxygen warnings"
+  fi;
+elif [[ $TASK = 'doxygen-manual' ]]; then
+  # check doxygen only if it is the requested task
+  autoreconf -i && ./configure --without-ola
+  # the following is a bit of a hack to build the files normally built during
+  # the build, so they are present for Doxygen to run against
+  #make builtfiles
+  # count the number of warnings
+  cd user_manual
+  warnings=$(doxygen 2>&1 >/dev/null | wc -l)
+  if [[ $warnings -ne 0 ]]; then
+    # print the output for info
+    doxygen
+    echo "Found $warnings user manual doxygen warnings"
+    exit 1;
+  else
+    echo "Found $warnings user manual doxygen warnings"
   fi;
 elif [[ $TASK = 'coverage' ]]; then
   # Compile with coverage for coveralls

@@ -1,21 +1,22 @@
-# Ja Rule
-[![Build Status](https://travis-ci.org/OpenLightingProject/ja-rule.svg?branch=master)](https://travis-ci.org/OpenLightingProject/ja-rule) [![Coverity Scan Status](https://scan.coverity.com/projects/3938/badge.svg)](https://scan.coverity.com/projects/3938) [![Coverage Status](https://coveralls.io/repos/OpenLightingProject/ja-rule/badge.png?branch=master)](https://coveralls.io/r/OpenLightingProject/ja-rule?branch=master)
+# Open Lighting Embedded
+[![Build Status](https://travis-ci.org/OpenLightingProject/ja-rule.svg?branch=master)](https://travis-ci.org/OpenLightingProject/ja-rule) [![Coverity Scan Status](https://scan.coverity.com/projects/3938/badge.svg)](https://scan.coverity.com/projects/3938) [![Coverage Status](https://coveralls.io/repos/OpenLightingProject/ja-rule/badge.svg?branch=master&service=github)](https://coveralls.io/github/OpenLightingProject/ja-rule?branch=master)
 
-Ja Rule is an open source DMX512 / RDM stack for PIC32 microcontrollers. The
-software is developed as part of the
+Open Lighting Embedded (OLE) is an open source DMX512 / RDM stack for PIC32
+microcontrollers. The software is developed as part of the
 [Open Lighting Project](https://www.openlighting.org/).
 
 ## Documentation
 
-The [Ja Rule Developer
-Documentation](https://docs.openlighting.org/ja-rule/doc/latest/), is targeted
-towards people who want to know more about the platform and how to modify it.
+The [OLE User Manual](http://docs.openlighting.org/ole/manual/latest/) 
+describes how to use an OLE device.
 
-The Ja Rule User Guide is not available yet.
+The [OLE Developer
+Documentation](https://docs.openlighting.org/ole/doc/latest/), is targeted
+towards people who want to know more about the platform and how to modify it.
 
 ## Licensing
 
-The Ja Rule codebase is licensed under the
+The OLE codebase is licensed under the
 [LGPL](http://www.gnu.org/licenses/lgpl.html).
 
 The unit-testing code & mocks are licenced under the
@@ -38,6 +39,11 @@ The hardware designs and the documentation is licensed under the
 │   └── src
 ├── linker       # linker scripts for the bootloader & application
 ├── tests        # Unit tests
+│   ├── harmony  # The mock Harmony modules
+│   ├── include  # Test headers
+│   ├── mocks    # Module mocks.
+│   ├── sim      # A simple PIC32 simulator
+│   └── tests    # The unittests
 ├── tools        # tools to upgrade the firmware on the device.
 └── user_manual  # The user manual
 ```
@@ -64,6 +70,17 @@ autoreconf -i
 make
 make check
 ```
+
+## PLASA Identifiers & UIDs
+
+The code by default uses the Open Lighting PLASA ID (0x7a70). This range is
+owned by the Open Lighting Project and at this time we do not sub-license
+ranges to anyone else. You *may not* ship product with the Open Lighting
+PLASA ID.
+
+Per https://wiki.openlighting.org/index.php/Open_Lighting_Allocations the
+UIDs 7a70:fffffe00 to 7a70:fffffefe may be used for development (in house)
+purposes.
 
 ## Dev Notes
 
